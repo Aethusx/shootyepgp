@@ -1442,7 +1442,7 @@ function sepgp:my_epgp_announce(use_main)
   self:defaultPrint(msg)
   local pr_decay, cap_ep, cap_pr = self:capcalc(ep,gp)
   if pr_decay < 0 then
-    msg = string.format(L["Close to EPGP Cap. Next Decay will change your |cffff7f00PR|r by |cffff0000%.4g|r."],pr_decay)
+    msg = string.format(L["Close to EPGP Cap. Next Decay will change your |cffff7f00PR|r by |cffff0000%.4f|r."],pr_decay)
     self:defaultPrint(msg)
   end
 end
