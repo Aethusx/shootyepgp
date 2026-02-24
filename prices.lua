@@ -1,5 +1,131 @@
-local prices = {
+﻿local prices = {
     -----------------
+    --- UpperKara ---
+    -----------------
+	
+-- Keeper Gnarlmoon --
+[55078] = {22,"T3"}; --Ley-attuned Choker
+[55084] = {400,"T3"}; --Torn Wings of Midnight
+[55079] = {266,"T3"}; --Ravenkeeper’s Frenzied Embrace
+[55081] = {22,"T3"}; --Manadrenched Feather Slippers
+[55285] = {266,"T3"}; --Crite’s Holy Hands
+[55080] = {333,"T3"}; --Bloodmoon, Sickle of the Murderous Flight
+[55082] = {266,"T3"}; --Idol of Laceration
+[55083] = {233,"T3"}; --Crown of the Wildpack
+
+-- Ley-Watcher Incantagos --
+[55086] = {22,"T3"}; --Magehunter Belt
+[55099] = {22,"T3"}; --Leysteel Legplates
+[55090] = {100,"T3"}; --Scaleshield of Azure Flight
+[55089] = {300,"T3"}; --Bands of the Surgebreaker
+[55085] = {266,"T3"}; --Magispark Leggings
+[55091] = {133,"T3"}; --Loop of Infused Renewal
+[55507] = {186,"T3"}; --Choker of Terminal Arcanum
+[55087] = {266,"T3"}; --Jewel of Wild Magics
+[41403] = {22,"T3"}; --Enchanted Amethyst
+
+-- Anomalus --
+[55092] = {22,"T3"}; --Manahide Slippers
+[55279] = {133,"T3"}; --Branch of Resolute Defense
+[55097] = {22,"T3"}; --Choker of Chromatic Power
+[55095] = {300,"T3"}; --Cloak of the Bloody Ravager
+[55093] = {533,"T3"}; --Remains of Overwhelming Power
+[55096] = {533,"T3"}; --Phase-shifting Crossbow
+[55106] = {533,"T3"}; --Bindings of Contained Magic
+[55098] = {266,"T3"}; --Gloves of Nourishment
+
+-- The Shade of Medivh --
+[55108] = {533,"T3"}; --Dreadslayer Shoulderblades
+[55109] = {533,"T3"}; --Legwraps of Meticulous Planning
+[55276] = {366,"T3"}; --Forgotten Raven's Mallet
+[55110] = {433,"T3"}; --Libram of the Eternal Tower
+[55107] = {266,"T3"}; --Gloves of Leyline Convergence
+[55111] = {533,"T3"}; --Eye of Dormant Corruption
+[55094] = {400,"T3"}; --Medivh's Hindsight
+[55112] = {133,"T3"}; --Pendant of Forgiven Mistakes
+
+-- King's Council --
+[55088] = {133,"T3"}; --Dragonclaw Gauntlets
+[55103] = {500,"T3"}; --Royal Seal of Greymane
+[55105] = {400,"T3"}; --Bishop’s Reverence
+[55100] = {266,"T3"}; --Checkmate
+[55102] = {100,"T3"}; --Insomnius’ Retribution
+[55274] = {433,"T3"}; --Chain Cloak of the Rookguard
+[55101] = {433,"T3"}; --King’s Edict
+[55104] = {433,"T3"}; --Pawn’s Advance
+
+-- T3.5 SET TOKENS --
+[55483] = {533,"T3"}; --BOOTS
+[55484] = {533,"T3"}; --BOOTS
+[55485] = {533,"T3"}; --SHOULDERS
+[55486] = {533,"T3"}; --SHOULDERS
+[55487] = {600,"T3"}; --HEAD
+[55488] = {600,"T3"}; --HEAD
+[55489] = {600,"T3"}; --LEGS
+[55490] = {600,"T3"}; --LEGS
+[55491] = {666,"T3"}; --CHEST
+[55492] = {666,"T3"}; --CHEST
+[55482] = {1000,"T3"}; --NECK
+
+-- Sanvs Tas'dal --
+[55113] = {533,"T3"}; --Dreadslayer Horns
+[55119] = {433,"T3"}; --Forgotten Hide Helm
+[55117] = {366,"T3"}; --Girdle of the Faded Primals
+[55118] = {533,"T3"}; --Kumi'sha's Tattered Drape
+[55116] = {666,"T3"}; --Raka'shishi, Spear of the Adrift Hunt
+[55115] = {666,"T3"}; --Riftcarver's Implement
+[55114] = {200,"T3"}; --Totem of Broken Earth
+
+-- Kruul --
+[55511] = {433,"T3"}; --Hellflame
+[55127] = {666,"T3"}; --Shar'tateth, the Shattered Edge
+[55128] = {666,"T3"}; --Comet Signaller
+[55129] = {666,"T3"}; --Desecration
+[55130] = {366,"T3"}; --Wristwraps of Exiled Radiance
+[55131] = {533,"T3"}; --Shieldrender Talisman
+[55132] = {433,"T3"}; --Pendant of Purified Demon's Blood
+[55506] = {533,"T3"}; --Worldbreaker Girlde
+[55510] = {533,"T3"}; --Fragments of Aldrach
+
+-- Rupturan the Broken --
+[55120] = {666,"T3"}; --Al'Kazeth, Claw of Ruptured Elements
+[55121] = {666,"T3"}; --Bulwark of Enduring Earth
+[55122] = {400,"T3"}; --Earthquake Leggings
+[55123] = {533,"T3"}; --Loop of Hardened Slate
+[55124] = {533,"T3"}; --Pure Jewel of Draenor
+[55125] = {266,"T3"}; --Handwraps of Dead Winds
+[55126] = {400,"T3"}; --Mantle of the Drifting Stars
+
+-- Mephistroth --
+[55579] = {533,"T3"}; --Heart of Mephistroth
+[55351] = {333,"T3"}; --Turalyon's Hope
+[55353] = {533,"T3"}; --Mephistroth's Cunning
+[55356] = {400,"T3"}; --Netherwrought Bracers
+[55513] = {533,"T3"}; --Tunic of Demonic Deception
+[55346] = {666,"T3"}; --Rain of Spiders
+[55347] = {666,"T3"}; --Thunderfall, Stormhammer of the Chief Thane
+[55357] = {533,"T3"}; --Sash of the Grand Betrayal
+[55354] = {533,"T3"}; --Khadgar's Guidance
+[55348] = {666,"T3"}; --Kirel'narak, the Death Sentence
+[55349] = {666,"T3"}; --Nethraka, Wing of Oblivion
+[55350] = {666,"T3"}; --Censer of Soulwarding
+[55352] = {533,"T3"}; --Cloak of Rapid Regeneration
+[55512] = {400,"T3"}; --Forgotten Hide Pauldrons
+[55355] = {533,"T3"}; --Memory of the Lost Guardian
+
+-- Trash Items --
+[55282] = {66,"T3"}; --Boots of the Grand Crusader
+[55508] = {22,"T3"}; --Brand of Karazhan
+[55284] = {133,"T3"}; --Dragunovi's Sash of Domination
+[55278] = {66,"T3"}; --Ques' Gauntlets of Precision
+[55286] = {66,"T3"}; --Ring of Holy Light
+[55275] = {22,"T3"}; --Slivers of Nullification
+[55277] = {133,"T3"}; --The End of All Ambitions
+[55280] = {66,"T3"}; --Boots of Elemental Fury
+[55281] = {66,"T3"}; --Gauntlets of Elemental Fury
+[55283] = {66,"T3"}; --Gauntlets of the Grand Crusader
+  
+	-----------------
     --- Naxxramas ---
     -----------------
   [22349] = {148,"T3"}; --T3 Chest Token
@@ -145,6 +271,7 @@ local prices = {
   [23001] = {96,"T3"}; --Eye of Diminution
   [23004] = {48,"T3"}; --Idol of Longevity
   [23005] = {68,"T3"}; --Totem of Flowing Water
+  [23006] = {68,"T3"}; --Libram of Light
   [23009] = {72,"T3"}; --Wand of the Whispering Dead
   [23014] = {120,"T3"}; --"Iblis, Blade of the Fallen Seraph"
   [23017] = {48,"T3"}; --Veil of Eclipse
@@ -206,7 +333,7 @@ local prices = {
   [23545] = {80,"T3"}; --Power of the Scourge
   [23547] = {80,"T3"}; --Resilience of the Scourge
   [23548] = {80,"T3"}; --Might of the Scourge
-  [23549] = {120,"T3"}; --Fortitude of the Scourge
+  [23549] = {80,"T3"}; --Fortitude of the Scourge
   [23577] = {200,"T3"}; --The Hungering Cold 
   [23663] = {48,"T3"}; --Girdle of Elemental Fury
   [23664] = {48,"T3"}; --Pauldrons of Elemental Fury
@@ -306,6 +433,9 @@ local prices = {
   [21609] = {52,"T2.5"}; --Regenerating Belt of Vek'nilash
   [21610] = {88,"T2.5"}; --Wormscale Blocker
   [21611] = {48,"T2.5"}; --Burrower Bracers
+  [21612] = {88,"T2.5"}; --Wormscale Stompers
+  [21613] = {88,"T2.5"}; --Wormhide Boots
+  [21614] = {4,"T2.5"}; --Wormhide Protector
   [21615] = {88,"T2.5"}; --Don Rigoberto's Lost Hat
   [21616] = {52,"T2.5"}; --Huhuran's Stinger
   [21617] = {64,"T2.5"}; --Wasphide Gauntlets
@@ -346,7 +476,7 @@ local prices = {
   [21679] = {48,"T2.5"}; --Kalimdor's Revenge
   [21680] = {56,"T2.5"}; --Vest of Swift Execution
   [21681] = {64,"T2.5"}; --Ring of the Devoured
-  [21682] = {4,"T2.5"}; --Bile-Covered Gauntlets
+  [21682] = {116,"T2.5"}; --Bile-Covered Gauntlets
   [21683] = {68,"T2.5"}; --Mantle of the Desert Crusade
   [21684] = {4,"T2.5"}; --Mantle of the Desert's Fury
   [21685] = {4,"T2.5"}; --Petrified Scarab
@@ -394,6 +524,11 @@ local prices = {
   [23557] = {128,"T2.5"}; --Larvae of the Great Worm
   [23558] = {24,"T2.5"}; --The Burrower's Shell
   [23570] = {80,"T2.5"}; --Jom Gabbar
+  [41077] = {134,"T2.5"}; --Yshgo'lar, Cowl of Fanatical Devotion
+  [55553] = {116,"T2.5"}; --Gloves of the Primordial Burrower
+  [55554] = {116,"T2.5"}; --Carapace Handguards
+  [55555] = {113,"T2.5"}; --Ivonor, Maiden's Mallet
+  [60003] = {152,"T2.5"}; --Remnants of an Old God
 
     ----------------------
     --- Blackwing Lair ---
@@ -773,10 +908,10 @@ sepgp.gp_prices = prices
   ["T3"] = 9
 }]]
 local progress_scaling = {
-  ["T3"] =   {["T3"]=1,  ["T2.5"]=1,  ["T2"]=1,  ["T1.5"]=1,["T1"]=1},
+  ["T3"] =   {["T3"]=1.5,["T2.5"]=1.5,["T2"]=2,  ["T1.5"]=2,["T1"]=2},
   ["T2.5"] = {["T3"]=1.5,["T2.5"]=1.5,["T2"]=2,  ["T1.5"]=2,["T1"]=2},
-  ["T2"] =   {["T3"]=2,  ["T2.5"]=2,  ["T2"]=3,  ["T1.5"]=3,["T1"]=3},
-  ["T1"] =   {["T3"]=4.5,["T2.5"]=4.5,["T2"]=4.5,["T1.5"]=6,["T1"]=9}
+  ["T2"] =   {["T3"]=1.5,["T2.5"]=1.5,["T2"]=2,  ["T1.5"]=2,["T1"]=2},
+  ["T1"] =   {["T3"]=1.5,["T2.5"]=1.5,["T2"]=2,  ["T1.5"]=2,["T1"]=2}
 }
 local function get_adjusted_price(price,tier,progress)
   if not progress_scaling[progress] then return price end
