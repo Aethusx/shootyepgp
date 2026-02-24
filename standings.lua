@@ -11,6 +11,7 @@ local groupings = {
   "sepgp_groupbyclass",
   "sepgp_groupbyarmor",
   "sepgp_groupbyrole",
+  "sepgp_sortbypr",
 }
 local PLATE, MAIL, LEATHER, CLOTH = 4,3,2,1
 local DPS, CASTER, HEALER, TANK = 4,3,2,1
@@ -250,6 +251,12 @@ function sepgp_standings:OnEnable()
           "func", function() sepgp_standings:ToggleGroupBy("sepgp_groupbyrole") end
         )
         D:AddLine(
+          "text", L["Sort by PR"],
+          "tooltipText", L["Sort by PR only, no grouping."],
+          "checked", sepgp_sortbypr,
+          "func", function() sepgp_standings:ToggleGroupBy("sepgp_sortbypr") end
+        )
+        D:AddLine(
           "text", L["Refresh"],
           "tooltipText", L["Refresh window"],
           "func", function() sepgp_standings:Refresh() end
@@ -420,7 +427,9 @@ function sepgp_standings:BuildStandingsTable()
     table.sort(t, function(a,b)
     if (a[3] ~= b[3]) then return a[3] > b[3]
       else return pr_sorter_standings(a,b) end
-    end)   
+    end)
+  elseif (sepgp_sortbypr) then
+    table.sort(t, pr_sorter_standings)
   else
     table.sort(t, pr_sorter_standings)
   end
@@ -497,5 +506,5 @@ function sepgp_standings:OnTooltipUpdate()
   end
 end
 
--- GLOBALS: sepgp_saychannel,sepgp_groupbyclass,sepgp_groupbyarmor,sepgp_groupbyrole,sepgp_raidonly,sepgp_decay,sepgp_minep,sepgp_reservechannel,sepgp_main,sepgp_progress,sepgp_discount,sepgp_log,sepgp_dbver,sepgp_looted
+-- GLOBALS: sepgp_saychannel,sepgp_groupbyclass,sepgp_groupbyarmor,sepgp_groupbyrole,sepgp_sortbypr,sepgp_raidonly,sepgp_decay,sepgp_minep,sepgp_reservechannel,sepgp_main,sepgp_progress,sepgp_discount,sepgp_log,sepgp_dbver,sepgp_looted
 -- GLOBALS: sepgp,sepgp_prices,sepgp_standings,sepgp_bids,sepgp_loot,sepgp_reserves,sepgp_alts,sepgp_logs
