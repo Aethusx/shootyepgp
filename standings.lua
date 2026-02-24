@@ -251,8 +251,8 @@ function sepgp_standings:OnEnable()
           "func", function() sepgp_standings:ToggleGroupBy("sepgp_groupbyrole") end
         )
         D:AddLine(
-          "text", L["Sort by PR"],
-          "tooltipText", L["Sort by PR only, no grouping."],
+          "text", L["Group by PR"],
+          "tooltipText", L["Group by PR only, no grouping."],
           "checked", sepgp_sortbypr,
           "func", function() sepgp_standings:ToggleGroupBy("sepgp_sortbypr") end
         )
