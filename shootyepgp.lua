@@ -42,7 +42,8 @@ local hexColorQuality = {}
 local reserves_blacklist,bids_blacklist = {},{}
 local bidlink = {
   ["ms"]=L["|cffFF3333|Hshootybid:1:$ML|h[Mainspec/NEED]|h|r"],
-  ["os"]=L["|cff009900|Hshootybid:2:$ML|h[Offspec/GREED]|h|r"]
+  ["os"]=L["|cff009900|Hshootybid:2:$ML|h[Offspec/GREED]|h|r"],
+  ["show"]="|cff33CCFF|Hshootybid:3:0|h[Show Bids]|h|r"
 }
 local options
 do
@@ -127,6 +128,15 @@ local admincmd, membercmd = {type = "group", handler = sepgp, args = {
     },
   }},
 {type = "group", handler = sepgp, args = {
+    bids = {
+      type = "execute",
+      name = L["Bids"],
+      desc = L["Show Bids Table."],
+      func = function()
+        sepgp_bids:Toggle()
+      end,
+      order = 1,
+    },
     show = {
       type = "execute",
       name = L["Standings"],
@@ -134,7 +144,7 @@ local admincmd, membercmd = {type = "group", handler = sepgp, args = {
       func = function()
         sepgp_standings:Toggle()
       end,
-      order = 1,
+      order = 2,
     },
     progress = {
       type = "execute",
@@ -143,7 +153,7 @@ local admincmd, membercmd = {type = "group", handler = sepgp, args = {
       func = function()
         sepgp:defaultPrint(sepgp_progress)
       end,
-      order = 2,
+      order = 3,
     },
     offspec = {
       type = "execute",
@@ -152,18 +162,18 @@ local admincmd, membercmd = {type = "group", handler = sepgp, args = {
       func = function()
         sepgp:defaultPrint(string.format("%s%%",sepgp_discount*100))
       end,
-      order = 3,
+      order = 4,
     },
     restart = {
       type = "execute",
       name = L["Restart"],
       desc = L["Restart shootyepgp if having startup problems."],
-      func = function() 
+      func = function()
         sepgp:OnEnable()
         sepgp:defaultPrint(L["Restarted"])
       end,
-      order = 4,
-    },    
+      order = 5,
+    },
   }}
   --[[{
     type = "execute",
@@ -305,9 +315,19 @@ function sepgp:buildMenu()
       desc = L["Only show members in raid."],
       order = 80,
       get = function() return not not sepgp_raidonly end,
-      set = function(v) 
+      set = function(v)
         sepgp_raidonly = not sepgp_raidonly
         sepgp:SetRefresh(true)
+      end,
+    }
+    options.args["show_bids"] = {
+      type = "toggle",
+      name = L["Show Bids"],
+      desc = L["Show the Bids window when bidding starts."],
+      order = 81,
+      get = function() return not not sepgp_showbids end,
+      set = function(v)
+        sepgp_showbids = not sepgp_showbids
       end,
     }
     options.args["progress_tier_header"] = {
@@ -449,6 +469,7 @@ function sepgp:OnInitialize() -- ADDON_LOADED (1) unless LoD
   if sepgp_discount == nil then sepgp_discount = 0.25 end
   if sepgp_altspool == nil then sepgp_altspool = false end
   if sepgp_altpercent == nil then sepgp_altpercent = 1.0 end
+  if sepgp_showbids == nil then sepgp_showbids = true end
   if sepgp_log == nil then sepgp_log = {} end
   if sepgp_looted == nil then sepgp_looted = {} end
   if sepgp_debug == nil then sepgp_debug = {} end
@@ -789,6 +810,9 @@ function sepgp:SetItemRef(link, name, button)
       bid = "+"
     elseif bid == "2" then
       bid = "-"
+    elseif bid == "3" then
+      sepgp_bids:Toggle(true)
+      return
     else
       bid = nil
     end
@@ -944,6 +968,7 @@ function sepgp:bidPrint(link,masterlooter,need,greed,bid)
   end
   local _, count = string.gsub(msg,"%$","%$")
   if (count > 0) then return end
+  msg = msg .. " " .. bidlink["show"]
   local chatframe
   if (SELECTED_CHAT_FRAME) then
     chatframe = SELECTED_CHAT_FRAME
@@ -1001,6 +1026,62 @@ function sepgp:addonComms(prefix,message,channel,sender)
     amount=tonumber(change)
   end
   if (who) and (what) and (amount) then
+    -- Handle bid broadcasts from raid leader
+    if who == "BID_ITEM" then
+      -- what = "itemString~quality~itemName~senderName"
+      local _, _, bItemString, bQuality, bItemName, bSender = string.find(what, "^([^~]+)~([^~]+)~([^~]+)~(.+)$")
+      if bItemString and bQuality and bItemName then
+        local quality = tonumber(bQuality) or 4
+        local itemColor = ITEM_QUALITY_COLORS[quality].hex
+        sepgp.bid_item = {}
+        sepgp.bids_main = {}
+        sepgp.bids_off = {}
+        sepgp.bid_item.link = bItemString
+        local itemLink = string.format("%s|H%s|h[%s]|h|r",itemColor,bItemString,bItemName)
+        sepgp.bid_item.linkFull = itemLink
+        sepgp.bid_item.name = string.format("%s[%s]|r",itemColor,bItemName)
+        if sepgp_showbids then
+          sepgp_bids:Toggle(true)
+        end
+      end
+      return
+    elseif who == "BID_ADD" then
+      -- what = "name:class:ep:gp:pr:main:spec"
+      local _, _, bName, bClass, bEP, bGP, bPR, bMain, bSpec = string.find(what, "^([^:]+):([^:]+):([^:]+):([^:]+):([^:]+):([^:]*):(.+)$")
+      if bName and bClass and bSpec then
+        local ep = tonumber(bEP) or 0
+        local gp = tonumber(bGP) or 0
+        local pr = tonumber(bPR) or 0
+        local main_name = (bMain ~= "") and bMain or nil
+        local entry
+        if main_name then
+          entry = {bName,bClass,ep,gp,pr,main_name}
+        else
+          entry = {bName,bClass,ep,gp,pr}
+        end
+        if bSpec == "MS" then
+          table.insert(sepgp.bids_main, entry)
+        elseif bSpec == "OS" then
+          table.insert(sepgp.bids_off, entry)
+        end
+        if IsRaidLeader() or self:lootMaster() then
+          sepgp_bids:Toggle(true)
+        else
+          sepgp_bids:Refresh()
+        end
+      end
+      return
+    elseif who == "BID_CLEAR" then
+      sepgp.bid_item = {}
+      sepgp.bids_main = {}
+      sepgp.bids_off = {}
+      sepgp_bids._counterText = ""
+      -- Hide the bid window
+      if not T:IsAttached("sepgp_bids") then
+        T:Attach("sepgp_bids")
+      end
+      return
+    end
     local msg
     local for_main = (sepgp_main and (who == sepgp_main))
     if (who == self._playerName) or (for_main) then
@@ -1788,6 +1869,11 @@ function sepgp:captureLootCall(text, sender)
           running_bid = true
           self:debugPrint("Capturing Bids for 5min.")
           sepgp_bids:Toggle(true)
+          -- Broadcast bid item to raid so all players can see the bids window
+          -- Send quality number instead of color code to avoid pipe char issues in addon messages
+          local _, _, bareItemName = string.find(itemName, "^%[(.+)%]$")
+          local bidItemMsg = string.format("BID_ITEM;%s~%d~%s~%s;1",itemString,quality,(bareItemName or itemName),self._playerName)
+          self:addonMessage(bidItemMsg,"RAID")
         end
         self:bidPrint(itemLink,sender,mskw_found,oskw_found,whisperkw_found)
       end
@@ -1836,6 +1922,9 @@ function sepgp:captureBid(text, sender)
               else
                 table.insert(sepgp.bids_main,{name,class,ep,gp,ep/gp})
               end
+              -- Broadcast bid to raid
+              local bidMsg = string.format("BID_ADD;%s:%s:%d:%d:%.4f:%s:%s;1",name,class,ep,gp,ep/gp,(main_name or ""),"MS")
+              self:addonMessage(bidMsg,"RAID")
             elseif (oskw_found) then
               bids_blacklist[sender] = true
               if (sepgp_altspool) and (main_name) then
@@ -1843,6 +1932,9 @@ function sepgp:captureBid(text, sender)
               else
                 table.insert(sepgp.bids_off,{name,class,ep,gp,ep/gp})
               end
+              -- Broadcast bid to raid
+              local bidMsg = string.format("BID_ADD;%s:%s:%d:%d:%.4f:%s:%s;1",name,class,ep,gp,ep/gp,(main_name or ""),"OS")
+              self:addonMessage(bidMsg,"RAID")
             end
             sepgp_bids:Toggle(true)
             return
@@ -1857,6 +1949,10 @@ function sepgp:clearBids(reset)
   if reset~=nil then
     self:debugPrint(L["Clearing old Bids"])
   end
+  -- Broadcast clear to raid if we are the leader
+  if (IsRaidLeader() or self:lootMaster()) and UnitInRaid("player") then
+    self:addonMessage("BID_CLEAR;0;1","RAID")
+  end
   sepgp.bid_item = {}
   sepgp.bids_main = {}
   sepgp.bids_off = {}
@@ -1867,6 +1963,10 @@ function sepgp:clearBids(reset)
   running_bid = false
   sepgp_bids._counterText = ""
   sepgp_bids:Refresh()
+end
+
+function sepgp:setRunningBid(val)
+  running_bid = val
 end
 
 ----------------
@@ -2428,5 +2528,5 @@ function sepgp:EasyMenu(menuList, menuFrame, anchor, x, y, displayMode, level)
   ToggleDropDownMenu(1, nil, menuFrame, anchor, x, y)
 end
 
--- GLOBALS: sepgp_saychannel,sepgp_groupbyclass,sepgp_groupbyarmor,sepgp_groupbyrole,sepgp_raidonly,sepgp_decay,sepgp_minep,sepgp_reservechannel,sepgp_main,sepgp_progress,sepgp_discount,sepgp_altspool,sepgp_altpercent,sepgp_log,sepgp_dbver,sepgp_looted,sepgp_debug,sepgp_fubar
+-- GLOBALS: sepgp_saychannel,sepgp_groupbyclass,sepgp_groupbyarmor,sepgp_groupbyrole,sepgp_raidonly,sepgp_decay,sepgp_minep,sepgp_reservechannel,sepgp_main,sepgp_progress,sepgp_discount,sepgp_altspool,sepgp_altpercent,sepgp_log,sepgp_dbver,sepgp_looted,sepgp_debug,sepgp_fubar,sepgp_showbids
 -- GLOBALS: sepgp,sepgp_prices,sepgp_standings,sepgp_bids,sepgp_loot,sepgp_reserves,sepgp_alts,sepgp_logs

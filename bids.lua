@@ -65,6 +65,12 @@ function sepgp_bids:Top()
   end  
 end
 
+function sepgp_bids:Close()
+  if not T:IsAttached("sepgp_bids") then
+    T:Attach("sepgp_bids")
+  end
+end
+
 function sepgp_bids:Toggle(forceShow)
   self:Top()
   if T:IsAttached("sepgp_bids") then
@@ -180,17 +186,24 @@ function sepgp_bids:OnTooltipUpdate()
       "text2","","child_text2R",  1, "child_text2G",  1, "child_text2B",  1,"child_justify2", "CENTER",
       "hideBlankLine", true
     )
-  countdownHeader:AddLine(
-      "text", C:Green("Countdown"), 
-      "text2", self._counterText, 
-      "func", "bidCountdown", "arg1", self
-    )  
+  if (IsRaidLeader() or sepgp:lootMaster()) then
+    countdownHeader:AddLine(
+        "text", C:Green("Countdown"),
+        "text2", self._counterText,
+        "func", "bidCountdown", "arg1", self
+      )
+  else
+    countdownHeader:AddLine(
+        "text", C:Green("Countdown"),
+        "text2", self._counterText
+      )
+  end
   local tm, to = self:BuildBidsTable()
   local msCount = table.getn(tm)
   local osCount = table.getn(to)
   local maincatHeader = T:AddCategory(
       "columns", 1,
-      "text", C:Gold("MainSpec Bids")
+      "text", string.format("%s %s", C:Gold("--- MAIN SPEC ---"), C:White("("..msCount..")"))
     ):AddLine("text","")
   local maincat = T:AddCategory(
       "columns", 5,
@@ -201,6 +214,7 @@ function sepgp_bids:OnTooltipUpdate()
       "text5", C:Orange("Main"),     "child_text5R",   1, "child_text5G",   1, "child_text5B",   0, "child_justify5", "RIGHT",
       "hideBlankLine", true
     )
+  local is_leader = (IsRaidLeader() or sepgp:lootMaster())
   for i = 1, msCount do
     local name, class, ep, gp, pr, main = unpack(tm[i])
     local namedesc
@@ -217,14 +231,24 @@ function sepgp_bids:OnTooltipUpdate()
       text2 = string.format("%d", ep)
       text4 = string.format("%.4f", pr)
     end
-    maincat:AddLine(
-      "text", namedesc,
-      "text2", text2,
-      "text3", string.format("%d", gp),
-      "text4", text4,
-      "text5", (main or ""),
-      "func", "announceWinnerMS", "arg1", self, "arg2", name, "arg3", pr
-    )
+    if is_leader then
+      maincat:AddLine(
+        "text", namedesc,
+        "text2", text2,
+        "text3", string.format("%d", gp),
+        "text4", text4,
+        "text5", (main or ""),
+        "func", "announceWinnerMS", "arg1", self, "arg2", name, "arg3", pr
+      )
+    else
+      maincat:AddLine(
+        "text", namedesc,
+        "text2", text2,
+        "text3", string.format("%d", gp),
+        "text4", text4,
+        "text5", (main or "")
+      )
+    end
   end
   if msCount == 0 then
     maincat:AddLine("text", C:Silver("--"))
@@ -258,19 +282,41 @@ function sepgp_bids:OnTooltipUpdate()
       text2 = string.format("%d", ep)
       text4 = string.format("%.4f", pr)
     end
-    offcat:AddLine(
-      "text", namedesc,
-      "text2", text2,
-      "text3", string.format("%d", gp),
-      "text4", text4,
-      "text5", (main or ""),
-      "func", "announceWinnerOS", "arg1", self, "arg2", name, "arg3", pr
-    )
+    if is_leader then
+      offcat:AddLine(
+        "text", namedesc,
+        "text2", text2,
+        "text3", string.format("%d", gp),
+        "text4", text4,
+        "text5", (main or ""),
+        "func", "announceWinnerOS", "arg1", self, "arg2", name, "arg3", pr
+      )
+    else
+      offcat:AddLine(
+        "text", namedesc,
+        "text2", text2,
+        "text3", string.format("%d", gp),
+        "text4", text4,
+        "text5", (main or "")
+      )
+    end
   end
   if osCount == 0 then
     offcat:AddLine("text", C:Silver("--"))
   end
+  local closecat = T:AddCategory(
+      "columns", 1,
+      "text", "",
+      "hideBlankLine", true
+    )
+  closecat:AddLine("text", "")
+  closecat:AddLine(
+      "text", C:Red("[ Close ]"),
+      "func", function()
+        sepgp_bids:ScheduleEvent("shootyepgpBidsClose", sepgp_bids.Close, 0.05, sepgp_bids)
+      end
+    )
 end
 
--- GLOBALS: sepgp_saychannel,sepgp_groupbyclass,sepgp_groupbyarmor,sepgp_groupbyrole,sepgp_raidonly,sepgp_decay,sepgp_minep,sepgp_reservechannel,sepgp_main,sepgp_progress,sepgp_discount,sepgp_log,sepgp_dbver,sepgp_looted
+-- GLOBALS: sepgp_saychannel,sepgp_groupbyclass,sepgp_groupbyarmor,sepgp_groupbyrole,sepgp_raidonly,sepgp_decay,sepgp_minep,sepgp_reservechannel,sepgp_main,sepgp_progress,sepgp_discount,sepgp_log,sepgp_dbver,sepgp_looted,sepgp_showbids
 -- GLOBALS: sepgp,sepgp_prices,sepgp_standings,sepgp_bids,sepgp_loot,sepgp_reserves,sepgp_alts,sepgp_logs

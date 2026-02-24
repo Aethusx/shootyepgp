@@ -24,11 +24,21 @@ function sepgp_loot:OnEnable()
           "func", function() sepgp_loot:Refresh() end
         )
         D:AddLine(
+          "text", L["Export CSV"],
+          "tooltipText", L["Export loot to csv."],
+          "func", function() sepgp_loot:ExportCSV() end
+        )
+        D:AddLine(
+          "text", L["Export Discord"],
+          "tooltipText", L["Export loot for Discord."],
+          "func", function() sepgp_loot:ExportDiscord() end
+        )
+        D:AddLine(
           "text", L["Clear"],
           "tooltipText", L["Clear Loot."],
           "func", function() sepgp_looted = {} sepgp_loot:Refresh() end
-        )        
-      end      
+        )
+      end
     )
   end
   if not T:IsAttached("sepgp_loot") then
@@ -97,6 +107,104 @@ end
 
 function sepgp_loot:OnClickItem(data)
 
+end
+
+function sepgp_loot:ExportCSV()
+  local export = getglobal("shooty_exportframe")
+  if not export then return end
+  export.action:Hide()
+  export.title:SetText(C:Gold(L["Ctrl-C to copy. Esc to close."]))
+  local t = self:BuildLootTable()
+  local txt = "Time;Player;Item;Bind;GP;OffspecGP;Action\n"
+  for i = 1, table.getn(t) do
+    local timestamp, player, player_color, itemLink, bind, price, off_price, action = unpack(t[i])
+    -- Strip color codes from player_color to get plain name
+    local plainPlayer = player or ""
+    local _, _, stripped = string.find(player_color or "", "|c%x%x%x%x%x%x%x%x(.+)|r")
+    if stripped then plainPlayer = stripped end
+    -- Strip color codes from itemLink to get plain item name
+    local plainItem = itemLink or ""
+    local _, _, itemName = string.find(itemLink or "", "|h%[(.+)%]|h")
+    if itemName then plainItem = itemName end
+    -- Strip color codes from bind
+    local plainBind = bind or ""
+    local _, _, strippedBind = string.find(bind or "", "|c%x%x%x%x%x%x%x%x(.+)|r")
+    if strippedBind then plainBind = strippedBind end
+    -- Strip color codes from action
+    local plainAction = action or ""
+    local _, _, strippedAction = string.find(action or "", "|c%x%x%x%x%x%x%x%x(.+)|r")
+    if strippedAction then plainAction = strippedAction end
+    txt = string.format("%s%s;%s;%s;%s;%s;%s;%s\n",
+      txt,
+      timestamp or "",
+      plainPlayer,
+      plainItem,
+      plainBind,
+      tostring(price or ""),
+      tostring(off_price or ""),
+      plainAction
+    )
+  end
+  export.AddSelectText(txt)
+  export:Show()
+end
+
+function sepgp_loot:ExportDiscord()
+  local export = getglobal("shooty_exportframe")
+  if not export then return end
+  export.action:Hide()
+  export.title:SetText(C:Gold(L["Ctrl-C to copy. Esc to close."]))
+  local t = self:BuildLootTable()
+  -- First pass: measure column widths
+  local rows = {}
+  local wPlayer, wItem, wGP, wAction = 6, 4, 2, 6  -- minimum widths for headers
+  for i = 1, table.getn(t) do
+    local timestamp, player, player_color, itemLink, bind, price, off_price, action = unpack(t[i])
+    local plainPlayer = player or ""
+    local _, _, stripped = string.find(player_color or "", "|c%x%x%x%x%x%x%x%x(.+)|r")
+    if stripped then plainPlayer = stripped end
+    local plainItem = itemLink or ""
+    local _, _, itemName = string.find(itemLink or "", "|h%[(.+)%]|h")
+    if itemName then plainItem = itemName end
+    local plainAction = action or ""
+    local _, _, strippedAction = string.find(action or "", "|c%x%x%x%x%x%x%x%x(.+)|r")
+    if strippedAction then plainAction = strippedAction end
+    local gpStr = tostring(price or "")
+    table.insert(rows, {plainPlayer, plainItem, gpStr, plainAction})
+    if string.len(plainPlayer) > wPlayer then wPlayer = string.len(plainPlayer) end
+    if string.len(plainItem) > wItem then wItem = string.len(plainItem) end
+    if string.len(gpStr) > wGP then wGP = string.len(gpStr) end
+    if string.len(plainAction) > wAction then wAction = string.len(plainAction) end
+  end
+  -- Helper: pad string to width
+  local function pad(s, w)
+    local diff = w - string.len(s)
+    if diff > 0 then
+      return s .. string.rep(" ", diff)
+    end
+    return s
+  end
+  local function rpad(s, w)
+    local diff = w - string.len(s)
+    if diff > 0 then
+      return string.rep(" ", diff) .. s
+    end
+    return s
+  end
+  local function dashes(w)
+    return string.rep("-", w)
+  end
+  -- Build output
+  local txt = "**Loot Report**\n```\n"
+  txt = txt .. pad("Player", wPlayer) .. " | " .. pad("Item", wItem) .. " | " .. rpad("GP", wGP) .. " | " .. "Action" .. "\n"
+  txt = txt .. dashes(wPlayer) .. "-|-" .. dashes(wItem) .. "-|-" .. dashes(wGP) .. "-|-" .. dashes(wAction) .. "\n"
+  for i = 1, table.getn(rows) do
+    local r = rows[i]
+    txt = txt .. pad(r[1], wPlayer) .. " | " .. pad(r[2], wItem) .. " | " .. rpad(r[3], wGP) .. " | " .. r[4] .. "\n"
+  end
+  txt = txt .. "```"
+  export.AddSelectText(txt)
+  export:Show()
 end
 
 function sepgp_loot:OnTooltipUpdate()
