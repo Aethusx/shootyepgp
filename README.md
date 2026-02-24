@@ -37,6 +37,18 @@ Addon has been designed so that basic member functionality is usable even withou
 - Type `/x +` (where x is the number of the custom channel) or `/x +MainName` if on an alt to respond to a standby list afk check.  
 Having the addon makes everything more convenient, but is not mandatory.
 
+## testing
+
+Macro to test the loot master bids window without being in a raid:
+```
+/run local s=sepgp;s.bid_item={link="1",name="Test Item"};s.bids_main={{"Huj","Warrior",500,1e3,.5},{"Zuziablm","Paladin",800,1e3,.8},{"Miau","Druid",300,1e3,.3}};s.bids_off={{"Fiut","Rogue",600,1e3,.6},{"Xd","Priest",200,1e3,.2}};sepgp_bids:Toggle(true)
+```
+
+Reset macro:
+```
+/run sepgp.bids_main={};sepgp.bids_off={};sepgp.bid_item={};sepgp_bids:Toggle()
+```
+
 ## epgp basics and help
 [shootyepgp wiki](https://github.com/Road-block/shootyepgp/wiki)
 

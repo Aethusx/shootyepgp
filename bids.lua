@@ -185,6 +185,9 @@ function sepgp_bids:OnTooltipUpdate()
       "text2", self._counterText, 
       "func", "bidCountdown", "arg1", self
     )  
+  local tm, to = self:BuildBidsTable()
+  local msCount = table.getn(tm)
+  local osCount = table.getn(to)
   local maincatHeader = T:AddCategory(
       "columns", 1,
       "text", C:Gold("MainSpec Bids")
@@ -195,11 +198,10 @@ function sepgp_bids:OnTooltipUpdate()
       "text2", C:Orange("ep"),     "child_text2R",   1, "child_text2G",   1, "child_text2B",   1, "child_justify2", "RIGHT",
       "text3", C:Orange("gp"),     "child_text3R",   1, "child_text3G",   1, "child_text3B",   1, "child_justify3", "RIGHT",
       "text4", C:Orange("pr"),     "child_text4R",   1, "child_text4G",   1, "child_text4B",   0, "child_justify4", "RIGHT",
-      "text5", C:Orange("Main"),     "child_text5R",   1, "child_text5G",   1, "child_text5B",   0, "child_justify5", "RIGHT",      
+      "text5", C:Orange("Main"),     "child_text5R",   1, "child_text5G",   1, "child_text5B",   0, "child_justify5", "RIGHT",
       "hideBlankLine", true
     )
-  local tm = self:BuildBidsTable()
-  for i = 1, table.getn(tm) do
+  for i = 1, msCount do
     local name, class, ep, gp, pr, main = unpack(tm[i])
     local namedesc
     if (main) then
@@ -224,25 +226,27 @@ function sepgp_bids:OnTooltipUpdate()
       "func", "announceWinnerMS", "arg1", self, "arg2", name, "arg3", pr
     )
   end
+  if msCount == 0 then
+    maincat:AddLine("text", C:Silver("--"))
+  end
   local offcatHeader = T:AddCategory(
       "columns", 1,
-      "text", C:Silver("OffSpec Bids")
-    ):AddLine("text","") 
+      "text", string.format("%s %s", C:Silver("--- OFF SPEC ---"), C:White("("..osCount..")"))
+    ):AddLine("text","")
   local offcat = T:AddCategory(
       "columns", 5,
       "text",  C:Orange("Name"),   "child_textR",    1, "child_textG",    1, "child_textB",    1, "child_justify",  "LEFT",
       "text2", C:Orange("ep"),     "child_text2R",   1, "child_text2G",   1, "child_text2B",   1, "child_justify2", "RIGHT",
       "text3", C:Orange("gp"),     "child_text3R",   1, "child_text3G",   1, "child_text3B",   1, "child_justify3", "RIGHT",
       "text4", C:Orange("pr"),     "child_text4R",   1, "child_text4G",   1, "child_text4B",   0, "child_justify4", "RIGHT",
-      "text5", C:Orange("Main"),     "child_text5R",   1, "child_text5G",   1, "child_text5B",   0, "child_justify5", "RIGHT",      
+      "text5", C:Orange("Main"),     "child_text5R",   1, "child_text5G",   1, "child_text5B",   0, "child_justify5", "RIGHT",
       "hideBlankLine", true
     )
-  local _,to = self:BuildBidsTable()
-  for i = 1, table.getn(to) do
+  for i = 1, osCount do
     local name, class, ep, gp, pr, main = unpack(to[i])
     local namedesc
     if (main) then
-      namedesc = string.format("%s%(%s%)", C:Colorize(BC:GetHexColor(class), name), L["Alt"])
+      namedesc = string.format("%s(%s)", C:Colorize(BC:GetHexColor(class), name), L["Alt"])
     else
       namedesc = C:Colorize(BC:GetHexColor(class), name)
     end
@@ -262,7 +266,10 @@ function sepgp_bids:OnTooltipUpdate()
       "text5", (main or ""),
       "func", "announceWinnerOS", "arg1", self, "arg2", name, "arg3", pr
     )
-  end   
+  end
+  if osCount == 0 then
+    offcat:AddLine("text", C:Silver("--"))
+  end
 end
 
 -- GLOBALS: sepgp_saychannel,sepgp_groupbyclass,sepgp_groupbyarmor,sepgp_groupbyrole,sepgp_raidonly,sepgp_decay,sepgp_minep,sepgp_reservechannel,sepgp_main,sepgp_progress,sepgp_discount,sepgp_log,sepgp_dbver,sepgp_looted
