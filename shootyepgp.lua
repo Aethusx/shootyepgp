@@ -1015,7 +1015,7 @@ function sepgp:addonMessage(message,channel,sender)
 end
 
 function sepgp:addonComms(prefix,message,channel,sender)
-  if not prefix == self.VARS.prefix then return end -- we don't care for messages from other addons
+  if prefix ~= self.VARS.prefix then return end -- we don't care for messages from other addons
   if sender == self._playerName then return end -- we don't care for messages from ourselves
   local name_g,class,rank = self:verifyGuildMember(sender,true)
   if not (name_g) then return end -- only accept messages from guild members
@@ -1831,7 +1831,7 @@ lootCall.bs = { -- blacklist
 }
 function sepgp:captureLootCall(text, sender)
   if not (string.find(text, "|Hitem:", 1, true)) then return end
-  local linkstriptext, count = string.gsub(text,"|c%x+|H[eimt:%d]+|h%[[%w%s',%-]+%]|h|r"," ; ")
+  local linkstriptext, count = string.gsub(text,"|c%x+|H[eimt:%d]+|h%[[^%]]+%]|h|r"," ; ")
   if count > 1 then return end
   local lowtext = string.lower(linkstriptext)
   local whisperkw_found, mskw_found, oskw_found, link_found, blacklist_found
@@ -1853,7 +1853,7 @@ function sepgp:captureLootCall(text, sender)
     if (oskw_found) then break end
   end
   if (whisperkw_found) or (mskw_found) or (oskw_found) then
-    _,_,itemLink = string.find(text,"(|c%x+|H[eimt:%d]+|h%[[%w%s',%-]+%]|h|r)")
+    _,_,itemLink = string.find(text,"(|c%x+|H[eimt:%d]+|h%[[^%]]+%]|h|r)")
     if (itemLink) and (itemLink ~= "") then
       link_found, _, itemColor, itemString, itemName = string.find(itemLink, "^(|c%x+)|H(.+)|h(%[.+%])")
     end
