@@ -180,22 +180,30 @@ function sepgp_bids:OnTooltipUpdate()
       "text2", price,
       "text3", offspec
     )
-  local countdownHeader = T:AddCategory(
-      "columns", 2,
-      "text","","child_textR",  1, "child_textG",  1, "child_textB",  1,"child_justify", "LEFT",
-      "text2","","child_text2R",  1, "child_text2G",  1, "child_text2B",  1,"child_justify2", "CENTER",
-      "hideBlankLine", true
-    )
   if (IsRaidLeader() or sepgp:lootMaster()) then
+    local countdownHeader = T:AddCategory(
+        "columns", 2,
+        "text","","child_textR",  1, "child_textG",  1, "child_textB",  1,"child_justify", "LEFT",
+        "text2","","child_text2R",  1, "child_text2G",  1, "child_text2B",  1,"child_justify2", "CENTER",
+        "hideBlankLine", true
+      )
     countdownHeader:AddLine(
         "text", C:Green("Countdown"),
         "text2", self._counterText,
         "func", "bidCountdown", "arg1", self
       )
-  else
-    countdownHeader:AddLine(
-        "text", C:Green("Countdown"),
-        "text2", self._counterText
+  end
+  if self._autoHideEndTime then
+    local remaining = math.max(0, math.ceil(self._autoHideEndTime - GetTime()))
+    local autoHideCat = T:AddCategory(
+        "columns", 2,
+        "text","","child_textR",  1, "child_textG",  1, "child_textB",  1,"child_justify", "LEFT",
+        "text2","","child_text2R",  1, "child_text2G",  1, "child_text2B",  1,"child_justify2", "CENTER",
+        "hideBlankLine", true
+      )
+    autoHideCat:AddLine(
+        "text", C:Silver(L["Auto-Hide Delay"]),
+        "text2", string.format(L["|cff00ff00%02d|r|cffffffffsec|r"], remaining)
       )
   end
   local tm, to = self:BuildBidsTable()
@@ -203,7 +211,7 @@ function sepgp_bids:OnTooltipUpdate()
   local osCount = table.getn(to)
   local maincatHeader = T:AddCategory(
       "columns", 1,
-      "text", string.format("%s %s", C:Gold("--- MAIN SPEC ---"), C:White("("..msCount..")"))
+      "text", string.format("%s %s", C:Gold("MAIN SPEC"), C:White("("..msCount..")"))
     ):AddLine("text","")
   local maincat = T:AddCategory(
       "columns", 5,
@@ -255,7 +263,7 @@ function sepgp_bids:OnTooltipUpdate()
   end
   local offcatHeader = T:AddCategory(
       "columns", 1,
-      "text", string.format("%s %s", C:Silver("--- OFF SPEC ---"), C:White("("..osCount..")"))
+      "text", string.format("%s %s", C:Silver("OFF SPEC"), C:White("("..osCount..")"))
     ):AddLine("text","")
   local offcat = T:AddCategory(
       "columns", 5,

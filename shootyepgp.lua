@@ -320,15 +320,47 @@ function sepgp:buildMenu()
         sepgp:SetRefresh(true)
       end,
     }
-    options.args["show_bids"] = {
-      type = "toggle",
-      name = L["Show Bids"],
-      desc = L["Show the Bids window when bidding starts."],
+    options.args["bid_window"] = {
+      type = "group",
+      name = L["Bid Window"],
+      desc = L["Bid Window settings."],
       order = 81,
-      get = function() return not not sepgp_showbids end,
-      set = function(v)
-        sepgp_showbids = not sepgp_showbids
-      end,
+      args = {
+        ["show_bids"] = {
+          type = "toggle",
+          name = L["Show Bids"],
+          desc = L["Show the Bids window when bidding starts."],
+          order = 1,
+          get = function() return not not sepgp_showbids end,
+          set = function(v)
+            sepgp_showbids = not sepgp_showbids
+          end,
+        },
+        ["auto_hide_bids"] = {
+          type = "toggle",
+          name = L["Auto-Hide Bids"],
+          desc = L["Automatically hide the Bids window after a delay when you are not the Loot Master."],
+          order = 2,
+          get = function() return not not sepgp_bidautohide end,
+          set = function(v)
+            sepgp_bidautohide = not sepgp_bidautohide
+          end,
+        },
+        ["auto_hide_timer"] = {
+          type = "range",
+          name = L["Auto-Hide Delay"],
+          desc = L["Seconds before the Bids window is automatically hidden."],
+          order = 3,
+          get = function() return sepgp_bidautohide_timer end,
+          set = function(v)
+            sepgp_bidautohide_timer = v
+          end,
+          min = 5,
+          max = 120,
+          step = 5,
+          hidden = function() return not sepgp_bidautohide end,
+        },
+      },
     }
     options.args["progress_tier_header"] = {
       type = "header",
@@ -470,6 +502,8 @@ function sepgp:OnInitialize() -- ADDON_LOADED (1) unless LoD
   if sepgp_altspool == nil then sepgp_altspool = false end
   if sepgp_altpercent == nil then sepgp_altpercent = 1.0 end
   if sepgp_showbids == nil then sepgp_showbids = true end
+  if sepgp_bidautohide == nil then sepgp_bidautohide = true end
+  if sepgp_bidautohide_timer == nil then sepgp_bidautohide_timer = 30 end
   if sepgp_log == nil then sepgp_log = {} end
   if sepgp_looted == nil then sepgp_looted = {} end
   if sepgp_debug == nil then sepgp_debug = {} end
@@ -1043,6 +1077,26 @@ function sepgp:addonComms(prefix,message,channel,sender)
         if sepgp_showbids then
           sepgp_bids:Toggle(true)
         end
+        -- Auto-hide timer for non-loot-masters
+        if sepgp_bidautohide and not (IsRaidLeader() or self:lootMaster()) then
+          if self:IsEventScheduled("shootyepgpBidAutoHide") then
+            self:CancelScheduledEvent("shootyepgpBidAutoHide")
+          end
+          if sepgp_bids:IsEventScheduled("shootyepgpBidAutoHideRefresh") then
+            sepgp_bids:CancelScheduledEvent("shootyepgpBidAutoHideRefresh")
+          end
+          sepgp_bids._autoHideEndTime = GetTime() + sepgp_bidautohide_timer
+          sepgp_bids:ScheduleRepeatingEvent("shootyepgpBidAutoHideRefresh", sepgp_bids.Refresh, 1, sepgp_bids)
+          self:ScheduleEvent("shootyepgpBidAutoHide", function()
+            sepgp_bids._autoHideEndTime = nil
+            if sepgp_bids:IsEventScheduled("shootyepgpBidAutoHideRefresh") then
+              sepgp_bids:CancelScheduledEvent("shootyepgpBidAutoHideRefresh")
+            end
+            if not T:IsAttached("sepgp_bids") then
+              T:Attach("sepgp_bids")
+            end
+          end, sepgp_bidautohide_timer)
+        end
       end
       return
     elseif who == "BID_ADD" then
@@ -1076,6 +1130,13 @@ function sepgp:addonComms(prefix,message,channel,sender)
       sepgp.bids_main = {}
       sepgp.bids_off = {}
       sepgp_bids._counterText = ""
+      sepgp_bids._autoHideEndTime = nil
+      if self:IsEventScheduled("shootyepgpBidAutoHide") then
+        self:CancelScheduledEvent("shootyepgpBidAutoHide")
+      end
+      if sepgp_bids:IsEventScheduled("shootyepgpBidAutoHideRefresh") then
+        sepgp_bids:CancelScheduledEvent("shootyepgpBidAutoHideRefresh")
+      end
       -- Hide the bid window
       if not T:IsAttached("sepgp_bids") then
         T:Attach("sepgp_bids")
@@ -1959,6 +2020,13 @@ function sepgp:clearBids(reset)
   bids_blacklist = {}
   if self:IsEventScheduled("shootyepgpBidTimeout") then
     self:CancelScheduledEvent("shootyepgpBidTimeout")
+  end
+  if self:IsEventScheduled("shootyepgpBidAutoHide") then
+    self:CancelScheduledEvent("shootyepgpBidAutoHide")
+  end
+  sepgp_bids._autoHideEndTime = nil
+  if sepgp_bids:IsEventScheduled("shootyepgpBidAutoHideRefresh") then
+    sepgp_bids:CancelScheduledEvent("shootyepgpBidAutoHideRefresh")
   end
   running_bid = false
   sepgp_bids._counterText = ""
