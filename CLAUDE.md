@@ -136,7 +136,7 @@ Messages sent via `SendAddonMessage(SEPGP_PREFIX, msg, channel)` with format `"W
 
 ## Coding Conventions
 
-- All user-facing strings wrapped in `L["..."]` (AceLocale). Translations live in `localization.lua` (enUS base, zhCN community translation).
+- All user-facing strings wrapped in `L["..."]` (AceLocale). Translations live in `localization.lua` (enUS base, zhCN, plPL). Dynamic locale switching is enabled via `L:EnableDynamicLocales(true)` — locale is stored in `self.db.char.locale` (AceDB) and applied in `OnInitialize` via `L:SetLocale()`. When adding new user-facing strings, add translations to all three locale blocks. The `L` local in each file is the same AceLocale singleton — use it directly for `SetLocale`/`HasLocale` calls, do not create a new `AL` variable via `AceLibrary("AceLocale-2.2"):new("shootyepgp")`.
 - UI modules follow a consistent Tablet-2.0 pattern: `Register` → `Detach`/`Attach` for show/hide, `OnTooltipUpdate` for rendering.
 - Officer note manipulation uses `string.find`/`string.gsub` with the `{(%d+):(%d+)}` pattern.
 - Item prices in `prices.lua` are keyed by item ID with `{gp_cost, tier_string}` tuples, scaled by progression tier multipliers.

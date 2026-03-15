@@ -43,7 +43,6 @@ local reserves_blacklist,bids_blacklist = {},{}
 local bidlink = {
   ["ms"]=L["|cffFF3333|Hshootybid:1:$ML|h[Mainspec/NEED]|h|r"],
   ["os"]=L["|cff009900|Hshootybid:2:$ML|h[Offspec/GREED]|h|r"],
-  ["show"]="|cff33CCFF|Hshootybid:3:0|h[Show Bids]|h|r"
 }
 local options
 do
@@ -481,6 +480,21 @@ function sepgp:buildMenu()
      hidden = function() return not (IsGuildLeader()) end,
      func = function() StaticPopup_Show("SHOOTY_EPGP_CONFIRM_RESET") end
     }
+    options.args["language"] = {
+      type = "text",
+      name = L["Language"],
+      desc = L["Set addon language."],
+      order = 130,
+      get = function() return sepgp.db.char.locale end,
+      set = function(v)
+        if not L:HasLocale(v) then return end
+        sepgp.db.char.locale = v
+        L:SetLocale(v)
+        options = nil
+        needInit = true
+      end,
+      validate = { ["enUS"]="English", ["zhCN"]="Chinese", ["plPL"]="Polski" },
+    }
   end
   if (needInit) or (needRefresh) then
     local members = sepgp:buildRosterTable()
@@ -508,7 +522,10 @@ function sepgp:OnInitialize() -- ADDON_LOADED (1) unless LoD
   if sepgp_looted == nil then sepgp_looted = {} end
   if sepgp_debug == nil then sepgp_debug = {} end
   self:RegisterDB("sepgp_fubar")
-  self:RegisterDefaults("char",{})
+  self:RegisterDefaults("char",{ locale = "enUS" })
+  if L:HasLocale(self.db.char.locale) then
+    L:SetLocale(self.db.char.locale)
+  end
   --table.insert(sepgp_debug,{[date("%b/%d %H:%M:%S")]="OnInitialize"})
 end
 
@@ -1002,7 +1019,7 @@ function sepgp:bidPrint(link,masterlooter,need,greed,bid)
   end
   local _, count = string.gsub(msg,"%$","%$")
   if (count > 0) then return end
-  msg = msg .. " " .. bidlink["show"]
+  msg = msg .. " |cff33CCFF|Hshootybid:3:0|h[" .. L["Show Bids"] .. "]|h|r"
   local chatframe
   if (SELECTED_CHAT_FRAME) then
     chatframe = SELECTED_CHAT_FRAME
