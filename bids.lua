@@ -32,6 +32,7 @@ function sepgp_bids:OnEnable()
 end
 
 function sepgp_bids:OnDisable()
+  self:CancelAutoHide()
   T:Close("sepgp_bids")
 end
 
@@ -48,6 +49,7 @@ function sepgp_bids:setHideScript()
       tablet:SetScript("OnHide",nil)
       tablet:SetScript("OnHide",function()
           if not T:IsAttached("sepgp_bids") then
+            sepgp_bids:CancelAutoHide()
             T:Attach("sepgp_bids")
             this:SetScript("OnHide",nil)
           end
@@ -66,9 +68,32 @@ function sepgp_bids:Top()
 end
 
 function sepgp_bids:Close()
+  self:CancelAutoHide()
   if not T:IsAttached("sepgp_bids") then
     T:Attach("sepgp_bids")
   end
+end
+
+function sepgp_bids:StartAutoHide(duration)
+  self:CancelAutoHide()
+  self._autoHideEndTime = GetTime() + duration
+  self:ScheduleRepeatingEvent("shootyepgpBidAutoHideRefresh", function()
+    if not T:IsAttached("sepgp_bids") then
+      sepgp_bids:Refresh()
+    end
+  end, 1)
+  sepgp:ScheduleEvent("shootyepgpBidAutoHide", function()
+    sepgp_bids:CancelAutoHide()
+    if not T:IsAttached("sepgp_bids") then
+      T:Attach("sepgp_bids")
+    end
+  end, duration)
+end
+
+function sepgp_bids:CancelAutoHide()
+  self._autoHideEndTime = nil
+  sepgp:CancelScheduledEvent("shootyepgpBidAutoHide")
+  self:CancelScheduledEvent("shootyepgpBidAutoHideRefresh")
 end
 
 function sepgp_bids:Toggle(forceShow)

@@ -1079,23 +1079,7 @@ function sepgp:addonComms(prefix,message,channel,sender)
         end
         -- Auto-hide timer for non-loot-masters
         if sepgp_bidautohide and not (IsRaidLeader() or self:lootMaster()) then
-          if self:IsEventScheduled("shootyepgpBidAutoHide") then
-            self:CancelScheduledEvent("shootyepgpBidAutoHide")
-          end
-          if sepgp_bids:IsEventScheduled("shootyepgpBidAutoHideRefresh") then
-            sepgp_bids:CancelScheduledEvent("shootyepgpBidAutoHideRefresh")
-          end
-          sepgp_bids._autoHideEndTime = GetTime() + sepgp_bidautohide_timer
-          sepgp_bids:ScheduleRepeatingEvent("shootyepgpBidAutoHideRefresh", sepgp_bids.Refresh, 1, sepgp_bids)
-          self:ScheduleEvent("shootyepgpBidAutoHide", function()
-            sepgp_bids._autoHideEndTime = nil
-            if sepgp_bids:IsEventScheduled("shootyepgpBidAutoHideRefresh") then
-              sepgp_bids:CancelScheduledEvent("shootyepgpBidAutoHideRefresh")
-            end
-            if not T:IsAttached("sepgp_bids") then
-              T:Attach("sepgp_bids")
-            end
-          end, sepgp_bidautohide_timer)
+          sepgp_bids:StartAutoHide(sepgp_bidautohide_timer)
         end
       end
       return
@@ -1130,13 +1114,7 @@ function sepgp:addonComms(prefix,message,channel,sender)
       sepgp.bids_main = {}
       sepgp.bids_off = {}
       sepgp_bids._counterText = ""
-      sepgp_bids._autoHideEndTime = nil
-      if self:IsEventScheduled("shootyepgpBidAutoHide") then
-        self:CancelScheduledEvent("shootyepgpBidAutoHide")
-      end
-      if sepgp_bids:IsEventScheduled("shootyepgpBidAutoHideRefresh") then
-        sepgp_bids:CancelScheduledEvent("shootyepgpBidAutoHideRefresh")
-      end
+      sepgp_bids:CancelAutoHide()
       -- Hide the bid window
       if not T:IsAttached("sepgp_bids") then
         T:Attach("sepgp_bids")
@@ -2021,13 +1999,7 @@ function sepgp:clearBids(reset)
   if self:IsEventScheduled("shootyepgpBidTimeout") then
     self:CancelScheduledEvent("shootyepgpBidTimeout")
   end
-  if self:IsEventScheduled("shootyepgpBidAutoHide") then
-    self:CancelScheduledEvent("shootyepgpBidAutoHide")
-  end
-  sepgp_bids._autoHideEndTime = nil
-  if sepgp_bids:IsEventScheduled("shootyepgpBidAutoHideRefresh") then
-    sepgp_bids:CancelScheduledEvent("shootyepgpBidAutoHideRefresh")
-  end
+  sepgp_bids:CancelAutoHide()
   running_bid = false
   sepgp_bids._counterText = ""
   sepgp_bids:Refresh()
