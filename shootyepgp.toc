@@ -7,7 +7,7 @@
 ## X-Website: https://github.com/Aethusx/shootyepgp
 ## X-Category: Guild
 ## X-Credits: shooty, Qcat(zhCN), Aethus
-## Version: 3.80
+## Version: 3.81
 ## X-Alpha: 
 ## OptionalDeps: Ace2
 ## SavedVariables: sepgp_saychannel, sepgp_groupbyclass, sepgp_groupbyarmor, sepgp_groupbyrole, sepgp_sortbypr, sepgp_raidonly, sepgp_dbver, sepgp_debug, sepgp_fubar

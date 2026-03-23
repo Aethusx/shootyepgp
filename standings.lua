@@ -289,6 +289,192 @@ function sepgp_standings:Refresh()
   T:Refresh("sepgp_standings")
 end
 
+local SCROLLBAR_EXTRA_WIDTH = 12
+local SCROLLBAR_TRACK_PADDING = 16 -- track anchored at -8 top, +8 bottom
+local SCROLLBAR_THUMB_HEIGHT = 24
+
+local function getStandingsMaxLines(frame)
+  return math.floor(30 / (frame.fontSizePercent or 1))
+end
+
+local function getCursorY(frame)
+  local _, y = GetCursorPosition()
+  return y / frame:GetEffectiveScale()
+end
+
+-- Compute from tablet height since anchored track may not have layout yet on first render
+local function getTrackMaxOffset(tablet)
+  return math.max(0, tablet:GetHeight() - SCROLLBAR_TRACK_PADDING - SCROLLBAR_THUMB_HEIGHT)
+end
+
+local function applyScrollPosition(tablet, newScroll)
+  local numLines = tablet.numLines or 0
+  local maxLines = getStandingsMaxLines(tablet)
+  local maxScroll = numLines - maxLines
+  if maxScroll <= 0 then return end
+  if newScroll < 0 then newScroll = 0 end
+  if newScroll > maxScroll then newScroll = maxScroll end
+  if newScroll ~= tablet.scroll then
+    tablet.scroll = newScroll
+    if tablet:IsShown() then
+      tablet:Show()
+    end
+  end
+end
+
+local function updateScrollball(frame)
+  if not frame.scrollball then return end
+  local numLines = frame.numLines or 0
+  local maxLines = getStandingsMaxLines(frame)
+  if numLines <= maxLines or numLines <= 0 then
+    frame.scrollball:Hide()
+    frame.scrollballTrack:Hide()
+    return
+  end
+  frame.scrollballTrack:Show()
+  frame.scrollball:Show()
+  local scroll = frame.scroll or 0
+  local maxScroll = numLines - maxLines
+  if maxScroll <= 0 then maxScroll = 1 end
+  local maxOffset = getTrackMaxOffset(frame)
+  local newY = -(scroll / maxScroll) * maxOffset
+  if frame.scrollball._lastY ~= newY then
+    frame.scrollball:ClearAllPoints()
+    frame.scrollball:SetPoint("TOP", frame.scrollballTrack, "TOP", 0, newY)
+    frame.scrollball._lastY = newY
+  end
+end
+
+local function setupScrollball(tablet)
+  if tablet.scrollball then return end
+
+  -- Track
+  local track = CreateFrame("Frame", nil, tablet)
+  track:SetWidth(6)
+  track:SetPoint("TOPRIGHT", tablet, "TOPRIGHT", -4, -8)
+  track:SetPoint("BOTTOMRIGHT", tablet, "BOTTOMRIGHT", -4, 8)
+  track:SetFrameLevel(tablet:GetFrameLevel() + 1)
+  track:EnableMouse(true)
+  track:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8X8"})
+  track:SetBackdropColor(0, 0, 0, 0.3)
+  track:Hide()
+  tablet.scrollballTrack = track
+
+  track:SetScript("OnMouseDown", function()
+    if arg1 == "LeftButton" then
+      local cursorY = getCursorY(this)
+      local maxOffset = getTrackMaxOffset(tablet)
+      if maxOffset <= 0 then return end
+      local clickOffset = this:GetTop() - cursorY - SCROLLBAR_THUMB_HEIGHT / 2
+      if clickOffset < 0 then clickOffset = 0 end
+      if clickOffset > maxOffset then clickOffset = maxOffset end
+      local numLines = tablet.numLines or 0
+      local maxLines = getStandingsMaxLines(tablet)
+      local maxScroll = numLines - maxLines
+      if maxScroll <= 0 then return end
+      applyScrollPosition(tablet, math.floor((clickOffset / maxOffset) * maxScroll + 0.5))
+    end
+  end)
+
+  -- Thumb
+  local thumb = CreateFrame("Frame", nil, track)
+  thumb:SetWidth(12)
+  thumb:SetHeight(SCROLLBAR_THUMB_HEIGHT)
+  thumb:SetPoint("TOP", track, "TOP", 0, 0)
+  thumb:SetFrameLevel(track:GetFrameLevel() + 1)
+  thumb:EnableMouse(true)
+  thumb:SetBackdrop({
+    bgFile = "Interface\\Buttons\\WHITE8X8",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = true, tileSize = 8, edgeSize = 8,
+    insets = {left = 2, right = 2, top = 2, bottom = 2}
+  })
+  thumb:SetBackdropColor(0.1, 0.08, 0, 0.9)
+  thumb:SetBackdropBorderColor(0.7, 0.57, 0, 0.8)
+  for i = -1, 1 do
+    local grip = thumb:CreateTexture(nil, "OVERLAY")
+    grip:SetWidth(6)
+    grip:SetHeight(1)
+    grip:SetPoint("CENTER", thumb, "CENTER", 0, i * 3)
+    grip:SetTexture(0.5, 0.4, 0.05)
+  end
+  thumb:Hide()
+  tablet.scrollball = thumb
+
+  local function setThumbNormal()
+    thumb:SetBackdropColor(0.1, 0.08, 0, 0.9)
+    thumb:SetBackdropBorderColor(0.7, 0.57, 0, 0.8)
+  end
+  local function setThumbHighlight()
+    thumb:SetBackdropColor(0.15, 0.12, 0, 1)
+    thumb:SetBackdropBorderColor(1, 0.82, 0, 1)
+  end
+
+  thumb:SetScript("OnEnter", function()
+    if not this.dragging then setThumbHighlight() end
+  end)
+  thumb:SetScript("OnLeave", function()
+    if not this.dragging then setThumbNormal() end
+  end)
+
+  -- Fullscreen overlay to capture mouse release anywhere during drag
+  local dragOverlay = CreateFrame("Frame", nil, UIParent)
+  dragOverlay:SetAllPoints(UIParent)
+  dragOverlay:SetFrameStrata("TOOLTIP")
+  dragOverlay:EnableMouse(true)
+  dragOverlay:Hide()
+
+  local function stopDrag()
+    thumb.dragging = false
+    setThumbNormal()
+    dragOverlay:SetScript("OnUpdate", nil)
+    dragOverlay:Hide()
+  end
+
+  dragOverlay:SetScript("OnMouseUp", function() stopDrag() end)
+
+  thumb:SetScript("OnMouseDown", function()
+    if arg1 == "LeftButton" then
+      this.dragging = true
+      this.dragStartY = getCursorY(this)
+      this.dragStartScroll = tablet.scroll or 0
+      setThumbHighlight()
+      dragOverlay:Show()
+      dragOverlay:SetScript("OnUpdate", function()
+        local dy = thumb.dragStartY - getCursorY(thumb)
+        local maxOffset = getTrackMaxOffset(tablet)
+        if maxOffset <= 0 then return end
+        local numLines = tablet.numLines or 0
+        local maxLines = getStandingsMaxLines(tablet)
+        local maxScroll = numLines - maxLines
+        if maxScroll <= 0 then return end
+        applyScrollPosition(tablet, math.floor(thumb.dragStartScroll + (dy / maxOffset) * maxScroll + 0.5))
+      end)
+    end
+  end)
+  thumb:SetScript("OnMouseUp", function() stopDrag() end)
+
+  -- Hook Show to add margin for scrollbar and update position
+  local origShow = tablet.Show
+  tablet.Show = function(self, tabletData)
+    if self._scrollbarExtra then
+      self:SetWidth(self:GetWidth() - self._scrollbarExtra)
+      self._scrollbarExtra = nil
+    end
+    origShow(self, tabletData)
+    local numLines = self.numLines or 0
+    local maxLines = getStandingsMaxLines(self)
+    if numLines > maxLines and numLines > 0 then
+      self._scrollbarExtra = SCROLLBAR_EXTRA_WIDTH
+      self:SetWidth(self:GetWidth() + SCROLLBAR_EXTRA_WIDTH)
+    end
+    updateScrollball(self)
+  end
+  if tablet:IsShown() then
+    tablet:Show()
+  end
+end
+
 function sepgp_standings:setHideScript()
   local i = 1
   local tablet = getglobal(string.format("Tablet20DetachedFrame%d",i))
@@ -302,6 +488,7 @@ function sepgp_standings:setHideScript()
             this:SetScript("OnHide",nil)
           end
         end)
+      setupScrollball(tablet)
       break
     end    
     i = i+1
