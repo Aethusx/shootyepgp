@@ -7,6 +7,52 @@ local L = AceLibrary("AceLocale-2.2"):new("shootyepgp")
 
 sepgp_loot = sepgp:NewModule("sepgp_loot", "AceDB-2.0")
 
+-- Discord ANSI escape codes
+local ESC = "\027"
+local RESET = ESC.."[0m"
+local BOLD = ESC.."[1m"
+
+local function stripColor(s)
+  local _, _, plain = string.find(s or "", "|c%x%x%x%x%x%x%x%x(.+)|r")
+  return plain or s or ""
+end
+
+local function pad(s, w)
+  local diff = w - string.len(s)
+  if diff > 0 then return s .. string.rep(" ", diff) end
+  return s
+end
+local function rpad(s, w)
+  local diff = w - string.len(s)
+  if diff > 0 then return string.rep(" ", diff) .. s end
+  return s
+end
+local function dashes(w) return string.rep("-", w) end
+
+-- ANSI color tables for Discord export (built once at load time)
+local actionAnsi = {
+  [sepgp.VARS.msgp]                  = ESC.."[32m",  -- green
+  [sepgp.VARS.osgp]                  = ESC.."[36m",  -- cyan
+  [sepgp.VARS.bankde]                = ESC.."[33m",  -- yellow
+  [stripColor(sepgp.VARS.reminder)]  = ESC.."[31m",  -- red
+}
+local qualityAnsi = {}
+do
+  local ansiForQuality = {
+    [2] = ESC.."[32m",   -- Uncommon (green)
+    [3] = ESC.."[36m",   -- Rare (cyan)
+    [4] = ESC.."[34m",   -- Epic (blue)
+    [5] = ESC.."[1;33m", -- Legendary (bright orange)
+  }
+  for q, ansi in pairs(ansiForQuality) do
+    local c = ITEM_QUALITY_COLORS[q]
+    if c and c.hex then
+      local _, _, hex = string.find(c.hex, "|cff(%x%x%x%x%x%x)")
+      if hex then qualityAnsi[string.lower(hex)] = ansi end
+    end
+  end
+end
+
 function sepgp_loot:OnEnable()
   if not T:IsRegistered("sepgp_loot") then
     T:Register("sepgp_loot",
@@ -105,44 +151,30 @@ function sepgp_loot:BuildLootTable()
   return sepgp_looted
 end
 
-function sepgp_loot:OnClickItem(data)
-
-end
-
 function sepgp_loot:ExportCSV()
   local export = getglobal("shooty_exportframe")
   if not export then return end
   export.action:Hide()
+  export.hidePageButtons()
+  export._readOnly = true
   export.title:SetText(C:Gold(L["Ctrl-C to copy. Esc to close."]))
   local t = self:BuildLootTable()
   local txt = "Time;Player;Item;Bind;GP;OffspecGP;Action\n"
   for i = 1, table.getn(t) do
     local timestamp, player, player_color, itemLink, bind, price, off_price, action = unpack(t[i])
-    -- Strip color codes from player_color to get plain name
-    local plainPlayer = player or ""
-    local _, _, stripped = string.find(player_color or "", "|c%x%x%x%x%x%x%x%x(.+)|r")
-    if stripped then plainPlayer = stripped end
-    -- Strip color codes from itemLink to get plain item name
+    local plainPlayer = stripColor(player_color)
     local plainItem = itemLink or ""
     local _, _, itemName = string.find(itemLink or "", "|h%[(.+)%]|h")
     if itemName then plainItem = itemName end
-    -- Strip color codes from bind
-    local plainBind = bind or ""
-    local _, _, strippedBind = string.find(bind or "", "|c%x%x%x%x%x%x%x%x(.+)|r")
-    if strippedBind then plainBind = strippedBind end
-    -- Strip color codes from action
-    local plainAction = action or ""
-    local _, _, strippedAction = string.find(action or "", "|c%x%x%x%x%x%x%x%x(.+)|r")
-    if strippedAction then plainAction = strippedAction end
     txt = string.format("%s%s;%s;%s;%s;%s;%s;%s\n",
       txt,
       timestamp or "",
       plainPlayer,
       plainItem,
-      plainBind,
+      stripColor(bind),
       tostring(price or ""),
       tostring(off_price or ""),
-      plainAction
+      stripColor(action)
     )
   end
   export.AddSelectText(txt)
@@ -153,57 +185,124 @@ function sepgp_loot:ExportDiscord()
   local export = getglobal("shooty_exportframe")
   if not export then return end
   export.action:Hide()
-  export.title:SetText(C:Gold(L["Ctrl-C to copy. Esc to close."]))
+  export._readOnly = true
   local t = self:BuildLootTable()
-  -- First pass: measure column widths
+
+  -- First pass: extract data and measure column widths
   local rows = {}
-  local wPlayer, wItem, wGP, wAction = 6, 4, 2, 6  -- minimum widths for headers
+  local wPlayer, wItem, wGP, wAction = 6, 4, 2, 6
   for i = 1, table.getn(t) do
     local timestamp, player, player_color, itemLink, bind, price, off_price, action = unpack(t[i])
-    local plainPlayer = player or ""
-    local _, _, stripped = string.find(player_color or "", "|c%x%x%x%x%x%x%x%x(.+)|r")
-    if stripped then plainPlayer = stripped end
+    local plainPlayer = stripColor(player_color)
     local plainItem = itemLink or ""
-    local _, _, itemName = string.find(itemLink or "", "|h%[(.+)%]|h")
-    if itemName then plainItem = itemName end
-    local plainAction = action or ""
-    local _, _, strippedAction = string.find(action or "", "|c%x%x%x%x%x%x%x%x(.+)|r")
-    if strippedAction then plainAction = strippedAction end
+    local itemHex
+    local _, _, ihex, iname = string.find(itemLink or "", "|cff(%x%x%x%x%x%x)|H.+|h(%[.+%])|h|r")
+    if iname then
+      plainItem = iname
+      itemHex = string.lower(ihex)
+    end
+    local plainAction = stripColor(action)
     local gpStr = tostring(price or "")
-    table.insert(rows, {plainPlayer, plainItem, gpStr, plainAction})
+    table.insert(rows, {plainPlayer, plainItem, gpStr, plainAction, itemHex})
     if string.len(plainPlayer) > wPlayer then wPlayer = string.len(plainPlayer) end
     if string.len(plainItem) > wItem then wItem = string.len(plainItem) end
     if string.len(gpStr) > wGP then wGP = string.len(gpStr) end
     if string.len(plainAction) > wAction then wAction = string.len(plainAction) end
   end
-  -- Helper: pad string to width
-  local function pad(s, w)
-    local diff = w - string.len(s)
-    if diff > 0 then
-      return s .. string.rep(" ", diff)
-    end
-    return s
-  end
-  local function rpad(s, w)
-    local diff = w - string.len(s)
-    if diff > 0 then
-      return string.rep(" ", diff) .. s
-    end
-    return s
-  end
-  local function dashes(w)
-    return string.rep("-", w)
-  end
-  -- Build output
-  local txt = "**Loot Report**\n```\n"
-  txt = txt .. pad("Player", wPlayer) .. " | " .. pad("Item", wItem) .. " | " .. rpad("GP", wGP) .. " | " .. "Action" .. "\n"
-  txt = txt .. dashes(wPlayer) .. "-|-" .. dashes(wItem) .. "-|-" .. dashes(wGP) .. "-|-" .. dashes(wAction) .. "\n"
+
+  -- Build row strings
+  local headerLine = BOLD .. pad("Player", wPlayer) .. " | " .. pad("Item", wItem) .. " | " .. rpad("GP", wGP) .. " | " .. "Action" .. RESET .. "\n"
+  local separatorLine = dashes(wPlayer) .. "-|-" .. dashes(wItem) .. "-|-" .. dashes(wGP) .. "-|-" .. dashes(wAction) .. "\n"
+  local rowStrings = {}
   for i = 1, table.getn(rows) do
     local r = rows[i]
-    txt = txt .. pad(r[1], wPlayer) .. " | " .. pad(r[2], wItem) .. " | " .. rpad(r[3], wGP) .. " | " .. r[4] .. "\n"
+    local iAnsi = qualityAnsi[r[5] or ""]
+    local aAnsi = actionAnsi[r[4]]
+    table.insert(rowStrings, pad(r[1], wPlayer) .. " | " .. (iAnsi or "") .. pad(r[2], wItem) .. (iAnsi and RESET or "") .. " | " .. rpad(r[3], wGP) .. " | " .. (aAnsi or "") .. r[4] .. (aAnsi and RESET or "") .. "\n")
   end
-  txt = txt .. "```"
-  export.AddSelectText(txt)
+
+  -- Split rows into pages that fit Discord's 2000 char limit
+  local DISCORD_LIMIT = 2000
+  local TITLE_MAX = string.len("**Loot Report (99/99)**\n")
+  local CODEBLOCK_OPEN = string.len("```ansi\n")
+  local CODEBLOCK_CLOSE = string.len("```")
+  local pageOverhead = TITLE_MAX + CODEBLOCK_OPEN + string.len(headerLine) + string.len(separatorLine) + CODEBLOCK_CLOSE
+  local pages = {}
+  local currentPage = {}
+  local currentLen = pageOverhead
+  for i = 1, table.getn(rowStrings) do
+    local lineLen = string.len(rowStrings[i])
+    if currentLen + lineLen > DISCORD_LIMIT and table.getn(currentPage) > 0 then
+      table.insert(pages, currentPage)
+      currentPage = {}
+      currentLen = pageOverhead
+    end
+    table.insert(currentPage, rowStrings[i])
+    currentLen = currentLen + lineLen
+  end
+  if table.getn(currentPage) > 0 then
+    table.insert(pages, currentPage)
+  end
+
+  -- Build page strings
+  local totalPages = table.getn(pages)
+  local pageStrings = {}
+  for p = 1, totalPages do
+    local title = "**Loot Report**\n"
+    if totalPages > 1 then
+      title = string.format("**Loot Report (%d/%d)**\n", p, totalPages)
+    end
+    local txt = title .. "```ansi\n" .. headerLine .. separatorLine
+    for _, line in ipairs(pages[p]) do
+      txt = txt .. line
+    end
+    txt = txt .. "```"
+    table.insert(pageStrings, txt)
+  end
+
+  -- Create page navigation buttons once
+  if not export._nextPage then
+    local function showPage(pg)
+      local total = table.getn(export._pages)
+      if pg < 1 then pg = total end
+      if pg > total then pg = 1 end
+      export._currentPage = pg
+      export.AddSelectText(export._pages[pg])
+      export.title:SetText(C:Gold(string.format(L["Page %d/%d - Ctrl-C to copy. Esc to close."], pg, total)))
+    end
+    export._prevPage = CreateFrame("Button", "shooty_exportprevpage", export, "UIPanelButtonTemplate")
+    export._prevPage:SetWidth(100)
+    export._prevPage:SetHeight(22)
+    export._prevPage:SetPoint("BOTTOMLEFT", 8, -20)
+    export._prevPage:SetScript("OnClick", function()
+      showPage((export._currentPage or 1) - 1)
+    end)
+    export._nextPage = CreateFrame("Button", "shooty_exportnextpage", export, "UIPanelButtonTemplate")
+    export._nextPage:SetWidth(100)
+    export._nextPage:SetHeight(22)
+    export._nextPage:SetPoint("BOTTOMRIGHT", -8, -20)
+    export._nextPage:SetScript("OnClick", function()
+      showPage((export._currentPage or 1) + 1)
+    end)
+  end
+
+  -- Show first page
+  export._pages = pageStrings
+  export._currentPage = 1
+  export.AddSelectText(pageStrings[1])
+
+  if totalPages > 1 then
+    export.title:SetText(C:Gold(string.format(L["Page %d/%d - Ctrl-C to copy. Esc to close."], 1, totalPages)))
+    export._prevPage:SetText(L["Prev Page"])
+    export._prevPage:Show()
+    export._nextPage:SetText(L["Next Page"])
+    export._nextPage:Show()
+  else
+    export.title:SetText(C:Gold(L["Ctrl-C to copy. Esc to close."]))
+    export._prevPage:Hide()
+    export._nextPage:Hide()
+  end
+
   export:Show()
 end
 
@@ -224,8 +323,7 @@ function sepgp_loot:OnTooltipUpdate()
       "text2", itemLink,
       "text3", bind,
       "text4", player_color,
-      "text5", action--,
---      "func", "OnClickItem", "arg1", self, "arg2", t[i]
+      "text5", action
     )
   end
 end

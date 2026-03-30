@@ -134,6 +134,31 @@ Messages sent via `SendAddonMessage(SEPGP_PREFIX, msg, channel)` with format `"W
 
 `admin()` returns `CanEditOfficerNote()` — only officers can modify EPGP data. All write operations check this before proceeding. Guild leader has additional powers (GP reset, settings broadcast).
 
+### Shared Export Frame
+
+`shooty_exportframe` (created at file scope in `standings.lua`) is a shared UI frame used by standings export/import, loot CSV export, and loot Discord export. Key API:
+- `AddSelectText(txt)` — sets text, highlights for copy, stores `_readOnlyText`/`_readOnlyLen` for the read-only guard
+- `hidePageButtons()` — hides Discord pagination buttons if they exist
+- `_readOnly` flag — when `true`, `OnTextChanged` reverts any user edits (exports); when `false`, allows editing (import)
+- `OnHide` cleans up `_readOnly`, `_readOnlyText`, `_pages` and hides page buttons
+
+Any new function that opens this frame must: hide `action` button, call `hidePageButtons()`, and set `_readOnly` appropriately.
+
+### Loot Action Constants
+
+`sepgp.VARS` defines loot action labels used as keys in the loot history:
+- `msgp = "Mainspec GP"`, `osgp = "Offspec GP"`, `bankde = "Bank-D/E"` — plain strings
+- `reminder = C:Red("Unassigned")` — **color-wrapped** via Crayon; must be stripped with `stripColor()` before using as a table key
+
+### Testing
+
+No build/test system. Manual testing in-game. Macro to test bids window without a raid:
+```
+/run local s=sepgp;s.bid_item={link="1",name="Test Item"};s.bids_main={{"Huj","Warrior",500,1e3,.5},{"Zuziablm","Paladin",800,1e3,.8},{"Miau","Druid",300,1e3,.3}};s.bids_off={{"Fiut","Rogue",600,1e3,.6},{"Xd","Priest",200,1e3,.2}};sepgp_bids:Toggle(true)
+```
+
+`test.lua` provides `/sepgptest` commands for testing bid broadcasting flows. It is a development-only file.
+
 ## Coding Conventions
 
 - All user-facing strings wrapped in `L["..."]` (AceLocale). Translations live in `localization.lua` (enUS base, zhCN, plPL). Dynamic locale switching is enabled via `L:EnableDynamicLocales(true)` — locale is stored in `self.db.char.locale` (AceDB) and applied in `OnInitialize` via `L:SetLocale()`. When adding new user-facing strings, add translations to all three locale blocks. The `L` local in each file is the same AceLocale singleton — use it directly for `SetLocale`/`HasLocale` calls, do not create a new `AL` variable via `AceLibrary("AceLocale-2.2"):new("shootyepgp")`.

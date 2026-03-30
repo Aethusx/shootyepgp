@@ -99,9 +99,34 @@ shooty_export.edit:SetScript("OnCursorChanged", function()
   shooty_export.edit:HighlightText()
 end)
 shooty_export.AddSelectText = function(txt)
+  shooty_export._readOnlyText = txt
+  shooty_export._readOnlyLen = string.len(txt)
+  shooty_export._settingText = true
   shooty_export.edit:SetText(txt)
   shooty_export.edit:HighlightText()
+  shooty_export._settingText = false
 end
+shooty_export.edit:SetScript("OnTextChanged", function()
+  if shooty_export._readOnly and shooty_export._readOnlyLen and not shooty_export._settingText then
+    if string.len(shooty_export.edit:GetText()) ~= shooty_export._readOnlyLen then
+      shooty_export._settingText = true
+      shooty_export.edit:SetText(shooty_export._readOnlyText)
+      shooty_export.edit:HighlightText()
+      shooty_export._settingText = false
+    end
+  end
+end)
+shooty_export.hidePageButtons = function()
+  if shooty_export._prevPage then shooty_export._prevPage:Hide() end
+  if shooty_export._nextPage then shooty_export._nextPage:Hide() end
+end
+shooty_export:SetScript("OnHide", function()
+  shooty_export._readOnly = false
+  shooty_export._readOnlyText = nil
+  shooty_export._readOnlyLen = nil
+  shooty_export._pages = nil
+  shooty_export.hidePageButtons()
+end)
 shooty_export.scroll = CreateFrame("ScrollFrame", "shooty_exportscroll", shooty_export, 'UIPanelScrollFrameTemplate')
 shooty_export.scroll:SetPoint('TOPLEFT', shooty_export, 'TOPLEFT', 8, -30)
 shooty_export.scroll:SetPoint('BOTTOMRIGHT', shooty_export, 'BOTTOMRIGHT', -30, 8)
@@ -110,6 +135,8 @@ sepgp:make_escable("shooty_exportframe","add")
 
 function sepgp_standings:Export()
   shooty_export.action:Hide()
+  shooty_export.hidePageButtons()
+  shooty_export._readOnly = true
   shooty_export.title:SetText(C:Gold(L["Ctrl-C to copy. Esc to close."]))
   local t = {}
   for i = 1, GetNumGuildMembers(1) do
@@ -133,6 +160,8 @@ end
 
 function sepgp_standings:Import()
   if not IsGuildLeader() then return end
+  shooty_export.hidePageButtons()
+  shooty_export._readOnly = false
   shooty_export.action:Show()
   shooty_export.title:SetText(C:Red("Ctrl-V to paste data. Esc to close."))
   shooty_export.AddSelectText(L.IMPORT_WARNING)
