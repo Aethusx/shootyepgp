@@ -1004,19 +1004,8 @@ function sepgp:bidPrint(link,masterlooter,need,greed,bid)
   local mslink = string.gsub(bidlink["ms"],"$ML",masterlooter)
   local oslink = string.gsub(bidlink["os"],"$ML",masterlooter)
   local msg = string.format(L["Click $MS or $OS for %s"],link)
-  if (need and greed) then
-    msg = string.gsub(msg,"$MS",mslink)
-    msg = string.gsub(msg,"$OS",oslink)
-  elseif (need) then
-    msg = string.gsub(msg,"$MS",mslink)
-    msg = string.gsub(msg,L["or $OS "],"")
-  elseif (greed) then
-    msg = string.gsub(msg,"$OS",oslink)
-    msg = string.gsub(msg,L["$MS or "],"")
-  elseif (bid) then
-    msg = string.gsub(msg,"$MS",mslink)
-    msg = string.gsub(msg,"$OS",oslink)  
-  end
+  msg = string.gsub(msg,"$MS",mslink)
+  msg = string.gsub(msg,"$OS",oslink)
   local _, count = string.gsub(msg,"%$","%$")
   if (count > 0) then return end
   msg = msg .. " |cff33CCFF|Hshootybid:3:0|h[" .. L["Show Bids"] .. "]|h|r"
